@@ -1,0 +1,148 @@
+fmod SHAMIR_SECRETS is
+    pr NAT .
+    pr BOOL .
+    pr STRING .
+
+    sort SecretShare SecretShareSet .
+    subsort SecretShare < SecretShareSet .
+    op empty-SecretShareSet : -> SecretShareSet [ctor] .
+    op __ : SecretShareSet SecretShareSet -> SecretShareSet [ctor assoc comm id: empty-SecretShareSet] .
+    op secret-share : Nat String Nat -> SecretShare [ctor] .
+
+    vars Sh Sh' : SecretShare .
+    var Se : SecretShareSet .
+    eq Sh Sh = Sh .
+
+    op _in_ : SecretShare SecretShareSet -> Bool .
+
+    eq Sh in empty-SecretShareSet = false .
+    eq Sh in (Sh' Se) = (Sh == Sh') or (Sh in Se) .
+
+    op delete : SecretShare SecretShareSet -> SecretShareSet .
+    op card : SecretShareSet -> Nat .
+
+    eq delete(Sh, empty-SecretShareSet) = empty-SecretShareSet .
+    eq delete(Sh, Sh Se) = delete(Sh, Se) .
+    eq delete(Sh, Se) = Se [owise] .
+
+    eq card(empty-SecretShareSet) = 0 .
+    eq card(Sh Se) = s card(delete(Sh, Se)) .
+
+    --- nb shares, threshold, secret
+    op get-shamir-shares : Nat Nat String -> SecretShareSet .
+
+    vars NbShares ShareThreshold ShareThreshold' : Nat .
+    var Secret : String .
+    eq get-shamir-shares(0, ShareThreshold, Secret) = empty-SecretShareSet .
+    eq get-shamir-shares(s NbShares, ShareThreshold, Secret) = secret-share(ShareThreshold, Secret, s NbShares) get-shamir-shares(NbShares, ShareThreshold, Secret) .
+    
+    op retrieve-shamir-secret : SecretShareSet -> String .
+
+    vars NumShare : Nat .
+
+    ceq retrieve-shamir-secret(secret-share(ShareThreshold, Secret, NumShare) Se) = Secret if s card(Se) >= ShareThreshold .
+endfm
+
+***(
+mod DYNAMIC_ROUTING is
+    pr NAT .
+
+    sort Vertice VerticesSet .
+    subsort Vertice < VerticesSet .
+    op _<->_ : Nat Nat -> Vertice [ctor comm] .
+    op nil-vertice : -> Vertice [ctor] .
+    op empty-vertices-set : -> VerticesSet [ctor] .
+    op _,_ : VerticesSet VerticesSet -> VerticesSet [ctor assoc comm id: empty-vertices-set] .
+    
+    var VS : VerticesSet .
+    var V : Vertice .
+    vars X Y : Nat .
+    eq VS,nil-vertice = VS .
+    eq X <-> X = nil-vertice .
+    eq V,V = V .
+
+    sort RoutingNode RoutingPath RoutingPathSet .
+    subsort RoutingNode < RoutingPath < RoutingPathSet .
+    op @_ : Nat -> RoutingNode [ctor] .
+    op empty-routing-path : -> RoutingPath [ctor] .
+    op _,_ : RoutingPath RoutingPath -> RoutingPath [ctor assoc id: empty-routing-path] .
+    op empty-routing-path-set : -> RoutingPathSet [ctor] .
+    op _;_ : RoutingPathSet RoutingPathSet -> RoutingPathSet [ctor assoc comm id: empty-routing-path-set] .
+
+    eq @ X,@ X = @ X .
+
+    sort NetworkStatus .
+    op _$_ : VerticesSet RoutingPathSet -> NetworkStatus [ctor] .
+
+    var RPS : RoutingPathSet .
+    var RP : RoutingPath .
+    rl [add-vertice] : VS,(X <-> Y) $ RPS => VS,(X <-> Y) $ RPS ; (@ X, @ Y) .
+    rl [add-route] : VS,(X <-> Y) $ RPS ; (RP, @ X) => VS,(X <-> Y) $ RPS ; (RP, @ X) ; (RP, @ X, @ Y) .
+
+endm
+)
+
+***(
+    (1 <-> 2),(1 <-> 3)  $ (@ 1,@ 2);(@ 2, @ 1) .
+    (1 <-> 2),(2 <-> 4),(1 <-> 3),(3 <-> 4) $ (@ 1,@ 2) ; (@ 1,@ 3) ; (@ 1,@ 2,@ 4) ; (@ 1,@ 3,@ 4) ; (@ 2,@ 1)  .
+)
+
+
+mod DYNAMIC_ROUTING is
+    pr NAT .
+    pr BOOL .
+
+    sort NodeDesc NodeDescSet .
+    subsort NodeDesc < NodeDescSet .
+    op empty-node-desc-set : -> NodeDescSet [ctor] .
+    op _;_ : NodeDescSet NodeDescSet -> NodeDescSet [ctor assoc comm id: empty-node-desc-set] .
+
+    sort Neighbour NeighbourSet .
+    subsort Neighbour < NeighbourSet .
+    op empty-neighbour-set : -> NeighbourSet [ctor] .
+    op _:_ : NeighbourSet NeighbourSet -> NeighbourSet [ctor assoc comm id: empty-neighbour-set] .
+
+    sort NeighbourPossibleRouting NeighbourPossibleRoutingSet . --- To which node this neighbour can lead?
+    subsort NeighbourPossibleRouting < NeighbourPossibleRoutingSet .
+    op empty-neighbour-possible-routing-set : -> NeighbourPossibleRoutingSet [ctor] .
+    op _+_ : NeighbourPossibleRoutingSet NeighbourPossibleRoutingSet -> NeighbourPossibleRoutingSet [ctor assoc comm id: empty-neighbour-possible-routing-set] .
+    op _in_ : NeighbourPossibleRouting NeighbourPossibleRoutingSet -> Bool .
+
+    op r : Nat -> NeighbourPossibleRouting [ctor] .
+    op v : Nat NeighbourPossibleRoutingSet -> Neighbour [ctor] .
+    op n : Nat NeighbourSet -> NodeDesc [ctor] .
+
+
+    var N : NodeDesc . --- to be refined to compare only node number
+    eq N ; N = N .
+
+    var V : Neighbour .
+    eq V : V = V . --- to be refined to compare only neighbour number
+
+    vars NPR NPR' : NeighbourPossibleRouting .
+    vars NPRS NPRS' : NeighbourPossibleRoutingSet .
+    eq NPR + NPR = NPR .
+    eq NPR in empty-neighbour-possible-routing-set = false .
+    eq NPR in (NPRS + NPR') = (NPR == NPR') or NPR in NPRS .
+
+    var NDS : NodeDescSet .
+    vars X Y Z tmpNat : Nat .
+    vars NS NS' : NeighbourSet .
+    ---ceq NDS ; n(Y, NS' : v(tmpNat, NPRS' + r(Z))) ; n(X, NS : v(Y, NPRS))
+    ---  = NDS ; n(Y, NS' : v(tmpNat, NPRS' + r(Z))) ; n(X, NS : v(Y, NPRS + r(Z))) if r(Z) in NPRS == false .
+
+    crl [fetch-routes-rec] : NDS ; n(Y, NS' : v(tmpNat, NPRS' + r(Z))) ; n(X, NS : v(Y, NPRS))
+                          => NDS ; n(Y, NS' : v(tmpNat, NPRS' + r(Z))) ; n(X, NS : v(Y, NPRS + r(Z))) if r(Z) in NPRS == false .
+
+endm
+
+***(
+    n(1, v(2, r(2) + r(4))) ; n(2, v(4, r(4) + r(3)))
+    n(1, v(2, r(2) ) : v(3, r(3) )) ; n(2, v(4, r(4))) ; n(3, v(4, r(4))) -> n(1, v(2, r(2) + r(4)) : v(3, r(3) + r(4))) ; n(2, v(4, r(4))) ; n(3, v(4, r(4)))
+
+    search [1, 10] n(1, v(2, r(2) ) : v(3, r(3) )) ; n(2, v(4, r(4))) ; n(3, v(4, r(4))) =>! n(1, v(2, r(2) + r(4)) : v(3, r(3))) ; n(2, v(4, r(4))) ; n(3, v(4, r(4))) .
+    -> no solution
+
+    search [1, 10] n(1, v(2, r(2) ) : v(3, r(3) )) ; n(2, v(4, r(4))) ; n(3, v(4, r(4))) =>! n(1, v(2, r(2) + r(4)) : v(3, r(3) + r(4))) ; n(2, v(4, r(4))) ; n(3, v(4, r(4))) .
+    -> 1 solution
+)
