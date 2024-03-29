@@ -109,20 +109,6 @@ mod DYNAMIC_ROUTING is
     op initial : -> NodeDescSet .
     eq initial = node1-initial ; node2-initial ; node3-initial ; node4-initial .
 
-    op node1-final : -> NodeDesc .
-    eq node1-final = n(1, v(2, r(2) + r(3) + r(4)) : v(3, r(2) + r(3) + r(4))) .
-    op node2-final : -> NodeDesc .
-    eq node2-final = n(2, v(1, r(1) + r(3) + r(4)) : v(4, r(1) + r(3) + r(4))) .
-    op node3-final : -> NodeDesc .
-    eq node3-final = n(3, v(1, r(1) + r(2) + r(4)) : v(4, r(1) + r(2) + r(4))) .
-    op node4-final : -> NodeDesc .
-    eq node4-final = n(4, v(2, r(1) + r(2) + r(3)) : v(3, r(1) + r(2) + r(3))) .
-    op final : -> NodeDescSet .
-    eq final = node1-final ; node2-final ; node3-final ; node4-final .
-
-    --- why rewrite initial == final BUT search initial =>! final fail ??!
-
-
 endm
 
 --- Should answer "No solution."
@@ -136,5 +122,11 @@ search [1] n(1, v(2, r(2))) ; n(2, v(1, r(1)) : v(4, r(4))) ; n(4, v(2, r(2))) =
 
 --- Should find 1 solution
 search [1] initial =>! n(1, v(2, r(2) + r(3) + r(4)) : v(3, r(2) + r(3) + r(4))) ; n(2, v(1, r(1) + r(3) + r(4)) : v(4, r(1) + r(3) + r(4))) ; n(3, v(1, r(1) + r(2) + r(4)) : v(4, r(1) + r(2) + r(4))) ; n(4, v(2, r(1) + r(2) + r(3)) : v(3, r(1) + r(2) + r(3))) .
-rew final == n(1, v(2, r(2) + r(3) + r(4)) : v(3, r(2) + r(3) + r(4))) ; n(2, v(1, r(1) + r(3) + r(4)) : v(4, r(1) + r(3) + r(4))) ; n(3, v(1, r(1) + r(2) + r(4)) : v(4, r(1) + r(2) + r(4))) ; n(4, v(2, r(1) + r(2) + r(3)) : v(3, r(1) + r(2) + r(3))) .
+
+***(
+    Now let's admit that node 2 have been compromised by the attacker and try to make node 1 believe that node 3 isn't a route toward node 4
+    There shall be no solution
+)
+search [1] initial =>! n(1, v(2, r(2) + r(3) + r(4)) : v(3, r(2) + r(3))) ; n(2, v(1, r(1) + r(3) + r(4)) : v(4, r(1) + r(3) + r(4))) ; n(3, v(1, r(1) + r(2) + r(4)) : v(4, r(1) + r(2) + r(4))) ; n(4, v(2, r(1) + r(2) + r(3)) : v(3, r(1) + r(2) + r(3))) .
+
 --- quit .
