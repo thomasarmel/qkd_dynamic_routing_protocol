@@ -43,50 +43,6 @@ fmod SHAMIR_SECRETS is
     ceq retrieve-shamir-secret(secret-share(ShareThreshold, Secret, NumShare) Se) = Secret if s card(Se) >= ShareThreshold .
 endfm
 
-***(
-mod DYNAMIC_ROUTING is
-    pr NAT .
-
-    sort Vertice VerticesSet .
-    subsort Vertice < VerticesSet .
-    op _<->_ : Nat Nat -> Vertice [ctor comm] .
-    op nil-vertice : -> Vertice [ctor] .
-    op empty-vertices-set : -> VerticesSet [ctor] .
-    op _,_ : VerticesSet VerticesSet -> VerticesSet [ctor assoc comm id: empty-vertices-set] .
-    
-    var VS : VerticesSet .
-    var V : Vertice .
-    vars X Y : Nat .
-    eq VS,nil-vertice = VS .
-    eq X <-> X = nil-vertice .
-    eq V,V = V .
-
-    sort RoutingNode RoutingPath RoutingPathSet .
-    subsort RoutingNode < RoutingPath < RoutingPathSet .
-    op @_ : Nat -> RoutingNode [ctor] .
-    op empty-routing-path : -> RoutingPath [ctor] .
-    op _,_ : RoutingPath RoutingPath -> RoutingPath [ctor assoc id: empty-routing-path] .
-    op empty-routing-path-set : -> RoutingPathSet [ctor] .
-    op _;_ : RoutingPathSet RoutingPathSet -> RoutingPathSet [ctor assoc comm id: empty-routing-path-set] .
-
-    eq @ X,@ X = @ X .
-
-    sort NetworkStatus .
-    op _$_ : VerticesSet RoutingPathSet -> NetworkStatus [ctor] .
-
-    var RPS : RoutingPathSet .
-    var RP : RoutingPath .
-    rl [add-vertice] : VS,(X <-> Y) $ RPS => VS,(X <-> Y) $ RPS ; (@ X, @ Y) .
-    rl [add-route] : VS,(X <-> Y) $ RPS ; (RP, @ X) => VS,(X <-> Y) $ RPS ; (RP, @ X) ; (RP, @ X, @ Y) .
-
-endm
-)
-
-***(
-    (1 <-> 2),(1 <-> 3)  $ (@ 1,@ 2);(@ 2, @ 1) .
-    (1 <-> 2),(2 <-> 4),(1 <-> 3),(3 <-> 4) $ (@ 1,@ 2) ; (@ 1,@ 3) ; (@ 1,@ 2,@ 4) ; (@ 1,@ 3,@ 4) ; (@ 2,@ 1)  .
-)
-
 
 mod DYNAMIC_ROUTING is
     pr NAT .
@@ -113,11 +69,15 @@ mod DYNAMIC_ROUTING is
     op n : Nat NeighbourSet -> NodeDesc [ctor] .
 
 
-    var N : NodeDesc . --- to be refined to compare only node number
-    eq N ; N = N .
+    var N : NodeDesc .
+    var NodeNumber : Nat .
+    vars neighbourSet neighbourSet' : NeighbourSet .
+    eq n(NodeNumber, neighbourSet) ; n(NodeNumber, neighbourSet') = n(NodeNumber, neighbourSet) .
 
     var V : Neighbour .
-    eq V : V = V . --- to be refined to compare only neighbour number
+    var neighbourNumber : Nat .
+    var neighbourPossibleRoutingSet neighbourPossibleRoutingSet' : NeighbourPossibleRoutingSet .
+    eq v(neighbourNumber, neighbourPossibleRoutingSet) : v(neighbourNumber, neighbourPossibleRoutingSet') = v(neighbourNumber, neighbourPossibleRoutingSet) .
 
     vars NPR NPR' : NeighbourPossibleRouting .
     vars NPRS NPRS' : NeighbourPossibleRoutingSet .
@@ -126,23 +86,55 @@ mod DYNAMIC_ROUTING is
     eq NPR in (NPRS + NPR') = (NPR == NPR') or NPR in NPRS .
 
     var NDS : NodeDescSet .
-    vars X Y Z tmpNat : Nat .
+    vars X Y Z neighbourNode2 : Nat .
     vars NS NS' : NeighbourSet .
-    ---ceq NDS ; n(Y, NS' : v(tmpNat, NPRS' + r(Z))) ; n(X, NS : v(Y, NPRS))
-    ---  = NDS ; n(Y, NS' : v(tmpNat, NPRS' + r(Z))) ; n(X, NS : v(Y, NPRS + r(Z))) if r(Z) in NPRS == false .
 
-    crl [fetch-routes-rec] : NDS ; n(Y, NS' : v(tmpNat, NPRS' + r(Z))) ; n(X, NS : v(Y, NPRS))
-                          => NDS ; n(Y, NS' : v(tmpNat, NPRS' + r(Z))) ; n(X, NS : v(Y, NPRS + r(Z))) if r(Z) in NPRS == false .
+    --- Uncomment this equation and comment the rule below in order to reduce an initial state towards its normal final state: red initial .
+    ---ceq NDS ; n(Y, NS' : v(neighbourNode2, NPRS' + r(Z))) ; n(X, NS : v(Y, NPRS))
+    ---  = NDS ; n(Y, NS' : v(neighbourNode2, NPRS' + r(Z))) ; n(X, NS : v(Y, NPRS + r(Z))) if r(Z) in NPRS == false /\ Z =/= X /\ neighbourNode2 =/= X .
+
+    crl [fetch-routes-rec] : NDS ; n(Y, NS' : v(neighbourNode2, NPRS' + r(Z))) ; n(X, NS : v(Y, NPRS))
+                          => NDS ; n(Y, NS' : v(neighbourNode2, NPRS' + r(Z))) ; n(X, NS : v(Y, NPRS + r(Z))) if r(Z) in NPRS == false /\ Z =/= X /\ neighbourNode2 =/= X .
+
+
+    --- Diamond
+    op node1-initial : -> NodeDesc .
+    eq node1-initial = n(1, v(2, r(2)) : v(3, r(3))) .
+    op node2-initial : -> NodeDesc .
+    eq node2-initial = n(2, v(1, r(1)) : v(4, r(4))) .
+    op node3-initial : -> NodeDesc .
+    eq node3-initial = n(3, v(1, r(1)) : v(4, r(4))) .
+    op node4-initial : -> NodeDesc .
+    eq node4-initial = n(4, v(2, r(2)) : v(3, r(3))) .
+    op initial : -> NodeDescSet .
+    eq initial = node1-initial ; node2-initial ; node3-initial ; node4-initial .
+
+    op node1-final : -> NodeDesc .
+    eq node1-final = n(1, v(2, r(2) + r(3) + r(4)) : v(3, r(2) + r(3) + r(4))) .
+    op node2-final : -> NodeDesc .
+    eq node2-final = n(2, v(1, r(1) + r(3) + r(4)) : v(4, r(1) + r(3) + r(4))) .
+    op node3-final : -> NodeDesc .
+    eq node3-final = n(3, v(1, r(1) + r(2) + r(4)) : v(4, r(1) + r(2) + r(4))) .
+    op node4-final : -> NodeDesc .
+    eq node4-final = n(4, v(2, r(1) + r(2) + r(3)) : v(3, r(1) + r(2) + r(3))) .
+    op final : -> NodeDescSet .
+    eq final = node1-final ; node2-final ; node3-final ; node4-final .
+
+    --- why rewrite initial == final BUT search initial =>! final fail ??!
+
 
 endm
 
-***(
-    n(1, v(2, r(2) + r(4))) ; n(2, v(4, r(4) + r(3)))
-    n(1, v(2, r(2) ) : v(3, r(3) )) ; n(2, v(4, r(4))) ; n(3, v(4, r(4))) -> n(1, v(2, r(2) + r(4)) : v(3, r(3) + r(4))) ; n(2, v(4, r(4))) ; n(3, v(4, r(4)))
+--- Should answer "No solution."
+search [1] n(1, v(2, r(2) ) : v(3, r(3) )) ; n(2, v(4, r(4))) ; n(3, v(4, r(4))) =>! n(1, v(2, r(2) + r(4)) : v(3, r(3))) ; n(2, v(4, r(4))) ; n(3, v(4, r(4))) .
 
-    search [1, 10] n(1, v(2, r(2) ) : v(3, r(3) )) ; n(2, v(4, r(4))) ; n(3, v(4, r(4))) =>! n(1, v(2, r(2) + r(4)) : v(3, r(3))) ; n(2, v(4, r(4))) ; n(3, v(4, r(4))) .
-    -> no solution
+--- Should find 1 solution
+search [1] n(1, v(2, r(2) ) : v(3, r(3) )) ; n(2, v(4, r(4))) ; n(3, v(4, r(4))) =>! n(1, v(2, r(2) + r(4)) : v(3, r(3) + r(4))) ; n(2, v(4, r(4))) ; n(3, v(4, r(4))) .
 
-    search [1, 10] n(1, v(2, r(2) ) : v(3, r(3) )) ; n(2, v(4, r(4))) ; n(3, v(4, r(4))) =>! n(1, v(2, r(2) + r(4)) : v(3, r(3) + r(4))) ; n(2, v(4, r(4))) ; n(3, v(4, r(4))) .
-    -> 1 solution
-)
+--- Should find 1 solution
+search [1] n(1, v(2, r(2))) ; n(2, v(1, r(1)) : v(4, r(4))) ; n(4, v(2, r(2))) =>! n(1, v(2, r(2) + r(4))) ; n(2, v(1, r(1)) : v(4, r(4))) ; n(4, v(2, r(1) + r(2))) .
+
+--- Should find 1 solution
+search [1] initial =>! n(1, v(2, r(2) + r(3) + r(4)) : v(3, r(2) + r(3) + r(4))) ; n(2, v(1, r(1) + r(3) + r(4)) : v(4, r(1) + r(3) + r(4))) ; n(3, v(1, r(1) + r(2) + r(4)) : v(4, r(1) + r(2) + r(4))) ; n(4, v(2, r(1) + r(2) + r(3)) : v(3, r(1) + r(2) + r(3))) .
+rew final == n(1, v(2, r(2) + r(3) + r(4)) : v(3, r(2) + r(3) + r(4))) ; n(2, v(1, r(1) + r(3) + r(4)) : v(4, r(1) + r(3) + r(4))) ; n(3, v(1, r(1) + r(2) + r(4)) : v(4, r(1) + r(2) + r(4))) ; n(4, v(2, r(1) + r(2) + r(3)) : v(3, r(1) + r(2) + r(3))) .
+--- quit .
