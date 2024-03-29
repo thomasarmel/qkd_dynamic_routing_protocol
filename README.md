@@ -162,7 +162,7 @@ A solution has been found to reach out the final state from the initial one!
 
 But what happens if :red_circle: **node 2 is malicious** :red_circle: and tries to make node 1 believe that node 3 isn't a route toward node 4?
 
-![Diamond network in final state](assets/diamond_network_node2_malicious.png)
+![Hypothetical Diamond network in final state where node 2 would be malicious](assets/diamond_network_node2_malicious.png)
 
 This can be expressed as follow:
 
@@ -180,4 +180,90 @@ No solution.
 [...]
 ```
 
-Fortunately, there is **No solution**, meaning this evil state isn't reachable as a final state from the initial state.
+Fortunately, there is **No solution**, meaning this evil state isn't reachable as a final state from the initial state :weary: .
+
+
+### Basic 2-nodes network
+
+Recall the basic 2-nodes presented in a previous section:
+
+![Simple routed 2-nodes network](./assets/simple_network.png)
+
+Obviously the initial state is also the final state:
+
+```
+Maude> search [1] n(1, v(2, r(2))) ; n(2, v(1, r(1))) =>! n(1, v(2, r(2))) ; n(2, v(1, r(1))) .
+[...]
+Solution 1 (state 0)
+[...]
+```
+
+
+### Flat 3-nodes network
+
+Let's take the following flat network with 3 nodes in final state, where each node knows only its neighbors:
+
+![Flat 3-nodes network in initial state](assets/flat_3_nodes_network_initial.png)
+
+This can be expressed as
+
+```maude
+n(1, v(2, r(2))) ; n(2, v(1, r(1)) : v(3, r(3))) ; n(3, v(2, r(2)))
+```
+
+The expected final state should be the following:
+
+![Flat 3-nodes network in final state](assets/flat_3_nodes_network_final.png)
+
+This will be expressed as
+
+```maude
+n(1, v(2, r(2) + r(3))) ; n(2, v(1, r(1)) : v(3, r(3))) ; n(3, v(2, r(1) + r(2)))
+```
+
+Please note that in this case, checking the network security is a total nonsense, as **you have to trust Node 2 anyway**.
+
+Let's check if we can reach out the final state from the initial one:
+
+```
+Maude> search [1] n(1, v(2, r(2))) ; n(2, v(1, r(1)) : v(3, r(3))) ; n(3, v(2, r(2))) =>! n(1, v(2, r(2) + r(3))) ; n(2, v(1, r(1)) : v(3, r(3))) ; n(3, v(2, r(1) + r(2))) .
+[...]
+Solution 1 (state 3)
+[...]
+```
+
+
+## Find the expected final state from the initial one
+
+In case you want to avoid calculating the final network state by hand, you could use directly the equation provided in the code.
+
+Uncomment the following equation:
+
+```maude
+ceq NDS ; n(Y, NS' : v(neighbourNode2, NPRS' + r(Z))) ; n(X, NS : v(Y, NPRS))
+  = NDS ; n(Y, NS' : v(neighbourNode2, NPRS' + r(Z))) ; n(X, NS : v(Y, NPRS + r(Z))) if r(Z) in NPRS == false /\ Z =/= X /\ neighbourNode2 =/= X .
+```
+
+and comment the rule:
+
+```maude
+crl [fetch-routes-rec] : NDS ; n(Y, NS' : v(neighbourNode2, NPRS' + r(Z))) ; n(X, NS : v(Y, NPRS))
+ => NDS ; n(Y, NS' : v(neighbourNode2, NPRS' + r(Z))) ; n(X, NS : v(Y, NPRS + r(Z))) if r(Z) in NPRS == false /\ Z =/= X /\ neighbourNode2 =/= X .
+```
+
+You would then be able to infer directly the final state from the initial one, using the Maude's `reduce` (abbreviated `red`) command:
+
+```maude
+red initial-state .
+```
+
+Let's try with the diamond initial state:
+
+```
+Maude> red n(1, v(2, r(2)) : v(3, r(3))) ; n(2, v(1, r(1)) : v(4, r(4))) ; n(3, v(1, r(1)) : v(4, r(4))) ; n(4, v(2, r(2)) : v(3, r(3))) .
+[...]
+result NodeDescSet: n(1, v(2, r(2) + r(3) + r(4)) : v(3, r(2) + r(3) + r(4))) ; n(2, v(1, r(1) + r(3) + r(4)) : v(4, r(1) + r(3) + r(4))) ; n(3, v(1, r(1) + r(2) + r(4)) : v(4, r(1) + r(2) + r(4))) ; n(4, v(2,
+    r(1) + r(2) + r(3)) : v(3, r(1) + r(2) + r(3)))
+```
+
+We got the final state!
