@@ -90,10 +90,10 @@ Let be:
 The route discovering algorithm equation is
 
 $$
- \delta(\Omega \ \cup \ n(Y, \tau' \ \cup \ v(T, \chi' \ \cup \ r(Z))) \ \cup \ n(X, \tau \ \cup \ v(Y, \chi))) =
+\delta(\Omega \ \cup \ \lbrace \ n(Y, \tau' \ \cup \ \lbrace \ v(T, \chi' \ \cup \ \lbrace \ r(Z) \ \rbrace \ ) \ \rbrace \ ) \ \rbrace \ \cup \ \lbrace \ n(X, \tau \ \cup \ \lbrace \ v(Y, \chi) \ \rbrace \ ) \ \rbrace \ ) =
  \begin{cases}
-    \Omega \ \cup \ n(Y, \tau' \ \cup \ v(T, \chi' \ \cup \ r(Z))) \ \cup \ n(X, \tau \ \cup \ v(Y, \chi \ \cup \ r(Z))),& \text{if } r(z) \notin \chi \ \text{ and } X \neq Z \text{ and } X \neq T\\
-    \Omega \ \cup \ n(Y, \tau' \ \cup \ v(T, \chi' \ \cup \ r(Z))) \ \cup \ n(X, \tau \ \cup \ v(Y, \chi)),              & \text{otherwise (no change)}
+    \Omega \ \cup \ \lbrace \ n(Y, \tau' \ \cup \ \lbrace \ v(T, \chi' \ \cup \ \lbrace \ r(Z) \ \rbrace \ ) \ \rbrace \ ) \ \rbrace \ \cup \ \lbrace \ n(X, \tau \ \cup \ \lbrace \ v(Y, \chi \ \cup \ \lbrace \ r(Z) \ \rbrace \ ) \ \rbrace \ ) \ \rbrace,& \text{if } r(z) \notin \chi \ \text{ and } X \neq Z \text{ and } X \neq T\\
+    \Omega \ \cup \ \lbrace \ n(Y, \tau' \ \cup \ \lbrace \ v(T, \chi' \ \cup \ \lbrace \ r(Z) \ \rbrace \ ) \ \rbrace \ ) \ \rbrace \ \cup \ \lbrace \ n(X, \tau \ \cup \ \lbrace \ v(Y, \chi) \ \rbrace \ ) \ \rbrace,              & \text{otherwise (no change)}
 \end{cases}
 $$
 
